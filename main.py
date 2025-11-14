@@ -14,6 +14,8 @@ from watchdog.events import FileSystemEventHandler
 # Class opens the data file and stores the relevant data
 class DataFile:
     def __init__(self, filepath):
+
+        self.filepath = filepath
         with open(filepath, newline='') as csvfile:
         
             # Read in and ignore the first 19 rows that are part of the file header
@@ -34,23 +36,45 @@ class DataFile:
         self.time_data_array = total_data_array[:,1]
         self.temperature_data_array = total_data_array[:,3]         
 
+        #function will read the last line of the datafile
+    def get_last_row(self):
+        with open(self.filepath, 'rb') as file:
+            file.seek(-2, 2)  # Go to the second to last byte
+            while file.read(1) != b'\n':
+                file.seek(-2, 1)  # Step back by 2 bytes
+            
+            last_row = file.readline().decode()
+            
+            # Parse the data row with the , as the delimieter
+            law_row_parsed = last_row.split(",")
+
+            # Write down the time stamp and the temperature for that given time
+            self.time_data_array = np.append(self.time_data_array, law_row_parsed[1])
+            self.temperature_data_array = np.append(self.temperature_data_array, law_row_parsed[3])
+
+            #print(self.temperature_data_array)
+
+
 # Class to check if the file was edited                       
 class MyHandler(FileSystemEventHandler):
     def on_modified(self, event):
         print(f'File {event.src_path} has been modified')
         # Add your update logic here
-        #print("File Was Changed")
+        print("File Was Changed")
+
+        # Call function to get the most recent row added to the fata file
+        
         
         observer.pause()
 
-        #Update the data file to get new values
-        print("Observer Paused")
-
-        #data_plots.update_graphs()
+        
+        #print("Observer Paused")
+        # Call the function to read the most recently written row to the data file.
+        QD_DataFile.get_last_row()
         time.sleep(0.5)
         
         observer.resume()
-        print("Observer Resumed")
+        #print("Observer Resumed")
 
 #Modificaiton to the observer class to be able to pause it.  Very useful.
 class PausingObserver(watchdog.observers.Observer):
@@ -72,15 +96,6 @@ class PausingObserver(watchdog.observers.Observer):
         yield
         self.resume()
 
-#function will read the last line of the datafile
-def get_last_row(filename):
-    with open(filename, 'rb') as file:
-        file.seek(-2, 2)  # Go to the second to last byte
-        while file.read(1) != b'\n':
-            file.seek(-2, 1)  # Step back by 2 bytes
-        last_row = file.readline().decode()
-        return last_row
-
 if __name__ == "__main__":
 
     window = tk.Tk()
@@ -92,7 +107,8 @@ if __name__ == "__main__":
 
     QD_DataFile = DataFile(complete_file_path)
 
-    print(QD_DataFile.time_data_array)
+    #QD_DataFile.get_last_row()
+    #print(QD_DataFile.time_data_array)
 
     event_handler = MyHandler()
     observer = PausingObserver()
