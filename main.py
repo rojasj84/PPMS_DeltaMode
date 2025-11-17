@@ -1,13 +1,10 @@
 import csv
 import os
 import time
-import watchdog.observers
-import contextlib
 
 import tkinter as tk
 import numpy as np
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+from tkinter import filedialog
 
 
 
@@ -52,49 +49,21 @@ class DataFile:
             self.time_data_array = np.append(self.time_data_array, law_row_parsed[1])
             self.temperature_data_array = np.append(self.temperature_data_array, law_row_parsed[3])
 
-            #print(self.temperature_data_array)
+            print(self.temperature_data_array)
 
-
-# Class to check if the file was edited                       
-class MyHandler(FileSystemEventHandler):
-    def on_modified(self, event):
-        print(f'File {event.src_path} has been modified')
-        # Add your update logic here
-        print("File Was Changed")
-
-        # Call function to get the most recent row added to the fata file
-        
-        
-        observer.pause()
-
-        
-        #print("Observer Paused")
-        # Call the function to read the most recently written row to the data file.
+def UpdateNumbers():
+    global file_path
+    global last_modified    
+    
+    current_modified = os.path.getmtime(file_path)
+    if current_modified != last_modified:
+        print(f"File modified at: {time.ctime(current_modified)}")
         QD_DataFile.get_last_row()
-        time.sleep(0.5)
+        print("File was changed...")
         
-        observer.resume()
-        #print("Observer Resumed")
-
-#Modificaiton to the observer class to be able to pause it.  Very useful.
-class PausingObserver(watchdog.observers.Observer):
-    def dispatch_events(self, *args, **kwargs):
-        if not getattr(self, '_is_paused', False):
-            super(PausingObserver, self).dispatch_events(*args, **kwargs)
-
-    def pause(self):
-        self._is_paused = True
-
-    def resume(self):
-        time.sleep(self.timeout)  # allow interim events to be queued
-        self.event_queue.queue.clear()
-        self._is_paused = False
-
-    @contextlib.contextmanager
-    def ignore_events(self):
-        self.pause()
-        yield
-        self.resume()
+        last_modified = current_modified
+    #time.sleep(.1)  # Check every second    
+    window.after(100, UpdateNumbers)
 
 if __name__ == "__main__":
 
@@ -102,24 +71,14 @@ if __name__ == "__main__":
     window.title("PPMS Data Gathering")
     window.geometry("1000x400")
 
-    file_path = 'data/example.dat'
+    file_path = os.path.abspath(filedialog.askopenfilename())
     complete_file_path = os.path.abspath(file_path)
 
     QD_DataFile = DataFile(complete_file_path)
 
-    #QD_DataFile.get_last_row()
     #print(QD_DataFile.time_data_array)
+    
+    last_modified = os.path.getmtime(file_path)
 
-    event_handler = MyHandler()
-    observer = PausingObserver()
-    observer.schedule(event_handler, path=complete_file_path, recursive=False)
-    observer.start()
-
-    '''try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()'''
-
+    window.after(100, UpdateNumbers)
     window.mainloop()
