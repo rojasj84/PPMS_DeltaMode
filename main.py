@@ -1,6 +1,9 @@
 import csv
 import os
 import time
+import pyvisa
+
+
 
 import tkinter as tk
 import numpy as np
@@ -49,6 +52,7 @@ class DataFile:
             self.time_data_array = np.append(self.time_data_array, law_row_parsed[1])
             self.temperature_data_array = np.append(self.temperature_data_array, law_row_parsed[3])
 
+            print(self.time_data_array)
             print(self.temperature_data_array)
 
 def UpdateNumbers():
@@ -73,6 +77,10 @@ if __name__ == "__main__":
 
     file_path = os.path.abspath(filedialog.askopenfilename())
     complete_file_path = os.path.abspath(file_path)
+
+    gpib_comm = pyvisa.ResourceMananger()
+    keithley_6112 = gpib_comm.open_resource('instrument address')
+    print(keithley_6112.query('*IDN?'))
 
     QD_DataFile = DataFile(complete_file_path)
 
