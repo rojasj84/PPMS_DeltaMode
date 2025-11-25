@@ -3,12 +3,9 @@ import os
 import time
 import pyvisa
 
-
-
 import tkinter as tk
 import numpy as np
 from tkinter import filedialog
-
 
 
 # Class opens the data file and stores the relevant data
@@ -78,9 +75,11 @@ if __name__ == "__main__":
     file_path = os.path.abspath(filedialog.askopenfilename())
     complete_file_path = os.path.abspath(file_path)
 
-    gpib_comm = pyvisa.ResourceMananger()
-    keithley_6112 = gpib_comm.open_resource('instrument address')
-    print(keithley_6112.query('*IDN?'))
+    keithley_6112_address = "GPIB0::12::INSTR"  
+
+    gpib_comm = pyvisa.ResourceManager()
+    keithley_6112 = gpib_comm.open_resource(keithley_6112_address)
+    print(keithley_6112.query(':IDN?'))
 
     QD_DataFile = DataFile(complete_file_path)
 
